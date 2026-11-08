@@ -1,0 +1,11 @@
+# Data is tracked by DVC, not git (see docs/decisions.md D6)
+/data/raw/*
+/data/processed/*
+!/data/**/.gitkeep
+
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+mlruns/
+.env
