@@ -95,3 +95,9 @@ The design is a **randomised complete block design**: each block of shots contai
 
 ### D13. Pilot pair changed to TP5 vs Srixon Soft Feel (supersedes the pair in D9)
 **Why:** Same logic as D9, a urethane tour ball against a soft ionomer ball, so it should be the easiest separation. These are the balls I'm actually using, and Soft Feel's low compression makes it the strongest candidate for an audio signal.
+
+### D14. Session 1 protocol deviation, logged rather than hidden
+**What happened:** I hit one TP5 and one Soft Feel, strictly alternating, instead of the randomised plan with 3 balls per model.
+**Effect:** Fine for the pilot's main jobs (testing the pipeline, estimating shot to shot spread). But ball model and individual ball are fully confounded in this session, so any difference is "this TP5 vs this Soft Feel", not "TP5 vs Soft Feel". Strict alternation still balances warm up and fatigue across both balls; randomisation is only lost as protection against periodic patterns.
+**Action:** plan.csv is rewritten to record what was actually hit, with a deviation note in session.yaml. Session 1 is excluded from the leave one ball out evaluation.
+**Interview line:** "My first session didn't follow the protocol. I recorded exactly what happened and limited what I claimed from it."
