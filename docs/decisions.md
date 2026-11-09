@@ -69,3 +69,13 @@ New entries go at the bottom; old ones are never rewritten, only superseded.
 **L6. GC3 export format.** Column names vary by Foresight software version; mapping lives in one place (`config.GC3_COLUMNS`).
 **L7. Simple onset detector.** Amplitude threshold works when impacts are the loudest sound. A neighbouring bay's shots could trigger false onsets; the count check catches this but doesn't fix it.
 **L8. Sample size.** Hand collected data will be hundreds to low thousands of shots, so models should stay small and results reported with confidence intervals.
+
+---
+
+## Later decisions
+
+### D11. One week collection plan: 7 sessions of about 50 shots, every model in every session
+**Decision:** Session 1 is the Pro V1 vs distance ball MVP, then the pipeline is checked on real data before continuing. Sessions 2 to 7 hit the same small set of models (Pro V1, Pro V1x, distance ball) every time.
+**Why:** Evaluation is grouped by session (D4), so a model that appears in only one session is perfectly confounded with that session and can't be tested fairly. Keeping the distance ball in every session gives an easy anchor class to check each session's data is sane. Checking after session 1 stops a mic or alignment problem silently ruining a whole week.
+**Trade off:** Fewer ball models in week one (about 100 shots each rather than 50 each across six models). Breadth comes in a later week.
+**Interview line:** "I designed the collection around how I was going to evaluate, not the other way round."
