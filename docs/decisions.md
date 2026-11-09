@@ -92,3 +92,6 @@ The design is a **randomised complete block design**: each block of shots contai
 **L10. Pseudo replication.** Shots are subsamples, not independent replicates. The true replicates of "ball model" are the physical balls (3 per model) and the sessions. Results generalise to *these* balls in *these* sessions; leave one ball out and leave one session out evaluation tests how far beyond that they go.
 **L11. Systematic ball rotation.** Ball units rotate by block number rather than at random, so unit and block position are linked. Minor, but a fully random unit assignment would be cleaner.
 **L12. Strike zone is subjective.** It's a hand recorded covariate, so it adds noise and possible bias.
+
+### D13. Pilot pair changed to TP5 vs Srixon Soft Feel (supersedes the pair in D9)
+**Why:** Same logic as D9, a urethane tour ball against a soft ionomer ball, so it should be the easiest separation. These are the balls I'm actually using, and Soft Feel's low compression makes it the strongest candidate for an audio signal.
