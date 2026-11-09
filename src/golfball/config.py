@@ -15,7 +15,8 @@ MIN_GAP_S = 3.0     # two real shots are never closer than this
 ONSET_THRESHOLD = 0.2  # fraction of the session's peak amplitude
 
 # Ball models in the study. MVP compares two very different balls first (D9).
-BALL_MODELS = ["prov1", "prov1x", "tp5", "tp5x", "srixon_zstar", "distance_ball"]
+BALL_MODELS = ["prov1", "prov1x", "tp5", "tp5x", "chrome_tour", "srixon_zstar",
+               "srixon_soft_feel", "distance_ball"]
 
 # GC3 export -> our column names. Foresight software versions name columns
 # differently (L6), so only this dict should need editing.
