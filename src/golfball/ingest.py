@@ -20,28 +20,39 @@ class AlignmentError(ValueError):
     """Shot counts disagree between plan, GC3 export and detected impacts."""
 
 
+def _signed(value) -> float:
+    """'6.3 R' -> 6.3, '118 L' -> -118, '4.5 DN' -> -4.5, '' -> NaN."""
+    parts = str(value).split()
+    if not parts or parts[0] == "nan":
+        return float("nan")
+    return float(parts[0]) * (config.GC3_SIGN[parts[1]] if len(parts) > 1 else 1)
+
+
 def load_gc3(path: Path) -> pd.DataFrame:
-    """Read a GC3 export, keep only measured columns and rename them (D2)."""
-    df = pd.read_csv(path)
-    df = df.drop(columns=[c for c in config.GC3_CALCULATED_EXCLUDE if c in df.columns])
+    """Read a Foresight session export: skip title rows, drop the Average row and
+    calculated columns (D2), turn direction suffixes into signs, add shot_time_s."""
+    df = pd.read_csv(path, skiprows=config.GC3_HEADER_LINES, dtype=str).rename(columns=str.strip)
+    df = df[pd.to_numeric(df.iloc[:, 0], errors="coerce").notna()]  # shot rows only
     missing = set(config.GC3_COLUMNS) - set(df.columns)
     if missing:
         raise KeyError(f"{path}: GC3 columns not found {sorted(missing)}; update config.GC3_COLUMNS")
-    return df[list(config.GC3_COLUMNS)].rename(columns=config.GC3_COLUMNS).astype(float)
+    out = df[list(config.GC3_COLUMNS)].map(_signed).rename(columns=config.GC3_COLUMNS)
+    clock = pd.to_datetime(df["Date"] + " " + df["Time"].str.extract(r"(\d+:\d+:\d+ [AP]M)")[0],
+                           format="%m/%d/%Y %I:%M:%S %p")
+    out["shot_time_s"] = (clock - clock.iloc[0]).dt.total_seconds()
+    return out.reset_index(drop=True)
 
 
 def ingest_session(session_dir: Path, clips_dir: Path = config.CLIPS_DIR) -> pd.DataFrame:
-    """Align plan, GC3 rows and audio onsets by order; refuse to guess if counts differ (D6)."""
+    """Match plan rows to GC3 rows by order, and GC3 rows to audio impacts by timestamp (D6, D15)."""
     session_id = session_dir.name
     meta = yaml.safe_load((session_dir / "session.yaml").read_text())
     plan = pd.read_csv(session_dir / "plan.csv", keep_default_na=False)
     gc3 = load_gc3(session_dir / "gc3.csv")
     rec, sr = audio.load_mono(session_dir / "recording.wav")
-    onsets = audio.detect_onsets(rec, sr)
-
-    counts = {"plan": len(plan), "gc3": len(gc3), "onsets": len(onsets)}
-    if len(set(counts.values())) != 1:
-        raise AlignmentError(f"{session_id}: shot counts differ {counts}")
+    if len(plan) != len(gc3):
+        raise AlignmentError(f"{session_id}: shot counts differ plan={len(plan)} gc3={len(gc3)}")
+    onsets = audio.align_to_shots(rec, sr, audio.detect_onsets(rec, sr), gc3.shot_time_s.to_numpy())
 
     rows = []
     for (_, p), (_, g), onset in zip(plan.iterrows(), gc3.iterrows(), onsets):

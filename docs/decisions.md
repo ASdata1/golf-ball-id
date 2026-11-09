@@ -101,3 +101,17 @@ The design is a **randomised complete block design**: each block of shots contai
 **Effect:** Fine for the pilot's main jobs (testing the pipeline, estimating shot to shot spread). But ball model and individual ball are fully confounded in this session, so any difference is "this TP5 vs this Soft Feel", not "TP5 vs Soft Feel". Strict alternation still balances warm up and fatigue across both balls; randomisation is only lost as protection against periodic patterns.
 **Action:** plan.csv is rewritten to record what was actually hit, with a deviation note in session.yaml. Session 1 is excluded from the leave one ball out evaluation.
 **Interview line:** "My first session didn't follow the protocol. I recorded exactly what happened and limited what I claimed from it."
+
+### D15. Match audio to shots by GC3 timestamps, not by counting sounds (supersedes the counting in D6)
+**What happened:** On real data the amplitude detector found 27 to 48 "impacts" for 24 shots depending on threshold (ball drops, start and stop of the recording).
+**Decision:** Detect sounds over-sensitively, then find the clock offset where the rhythm of sounds matches the rhythm of GC3 shot times, and take the loudest sound within 2 s of each shot. If a GC3 shot has no sound near it, ingestion fails.
+**Result:** all 24 shots matched, worst timing error 0.53 s.
+**Interview line:** "Counting events broke on real data, so I aligned on timing, using the other sensor as ground truth."
+
+### D16. Pilot results change the plan
+**Finding:** On full 7 irons, TP5 and Soft Feel were indistinguishable on every launch measure (spin difference 38 rpm, p = 0.81; adjusted for club speed, attack angle, path and launch: 52 rpm, 95% CI roughly −320 to +220). Shot to shot spin SD is about 390 rpm raw, 315 rpm after adjusting for club data.
+**Implications:** (1) A full 7 iron is probably the wrong shot for this question. Cover material shows up mostly on partial wedges and greenside shots, so add a wedge protocol. (2) Adjusting for club data cuts the shots needed by about a third, so club data stays in the model as covariates. (3) Power: about 26 shots per ball to detect a 300 rpm difference, about 100 for 150 rpm.
+**Interview line:** "The pilot told me my first experimental setup couldn't answer the question, which is exactly what pilots are for."
+
+**L13. Phone limiter.** Every impact peaked at 0.89 to 0.92 of full scale, which points to automatic limiting in the phone. Peak loudness can't be used as a feature, and the attack of the transient may be distorted. Fix: move the mic further away until peaks vary, or use an external mic.
+**L14. GC3 spin misreads.** Shot 23 repeated shot 22's spin numbers exactly. Added as a data quality check to watch for.

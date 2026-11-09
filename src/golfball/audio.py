@@ -18,11 +18,11 @@ def load_mono(path: Path) -> tuple[np.ndarray, int]:
 
 def detect_onsets(audio: np.ndarray, sr: int,
                   threshold: float = config.ONSET_THRESHOLD,
-                  min_gap_s: float = config.MIN_GAP_S) -> np.ndarray:
-    """Sample indices of impacts: first sample above threshold * peak, then a dead time of min_gap_s.
+                  min_gap_s: float = config.MIN_GAP_ONSET_S) -> np.ndarray:
+    """Candidate sound events: first sample above threshold * peak, then a dead time of min_gap_s.
 
-    Deliberately simple. Impacts are by far the loudest transients in a
-    session, so an amplitude threshold works; anything subtler is a later iteration.
+    Deliberately over-sensitive. Ball drops and voices get picked up too;
+    align_to_shots() uses the GC3 timestamps to choose the real impacts (D15).
     """
     env = np.abs(audio)
     above = np.flatnonzero(env >= threshold * env.max())
@@ -33,6 +33,35 @@ def detect_onsets(audio: np.ndarray, sr: int,
             onsets.append(i)
             last = i
     return np.array(onsets, dtype=int)
+
+
+def align_to_shots(audio: np.ndarray, sr: int, onsets: np.ndarray, shot_times_s: np.ndarray,
+                   tol_s: float = config.ALIGN_TOLERANCE_S) -> np.ndarray:
+    """Pick one onset per GC3 shot by matching the rhythm of shots, not just their count.
+
+    The phone and GC3 clocks differ by an unknown offset, so every (onset, shot)
+    pairing is tried as the offset. The offset that matches the most shots, with
+    the smallest timing error, wins. Within each shot's window the loudest
+    candidate is the impact. Raises if any shot has no impact near it.
+    """
+    from golfball.ingest import AlignmentError  # local import avoids a cycle
+    t = onsets / sr
+    shot_times_s = np.asarray(shot_times_s, dtype=float)
+    best = None
+    for offset in {round(o - s, 2) for o in t for s in shot_times_s}:
+        err = np.abs(t[None, :] - (shot_times_s[:, None] + offset)).min(axis=1)
+        score = ((err <= tol_s).sum(), -err[err <= tol_s].sum())
+        if best is None or score > best[0]:
+            best = (score, offset)
+    offset = best[1]
+    loud = np.array([np.abs(audio[o:o + int(0.05 * sr)]).max() for o in onsets])
+    picked = []
+    for i, st in enumerate(shot_times_s):
+        near = np.flatnonzero(np.abs(t - (st + offset)) <= tol_s)
+        if len(near) == 0:
+            raise AlignmentError(f"no impact within {tol_s}s of GC3 shot {i + 1}")
+        picked.append(onsets[near[np.argmax(loud[near])]])
+    return np.array(picked)
 
 
 def cut_clip(audio: np.ndarray, sr: int, onset: int) -> np.ndarray:
