@@ -79,3 +79,16 @@ New entries go at the bottom; old ones are never rewritten, only superseded.
 **Why:** Evaluation is grouped by session (D4), so a model that appears in only one session is perfectly confounded with that session and can't be tested fairly. Keeping the distance ball in every session gives an easy anchor class to check each session's data is sane. Checking after session 1 stops a mic or alignment problem silently ruining a whole week.
 **Trade off:** Fewer ball models in week one (about 100 shots each rather than 50 each across six models). Breadth comes in a later week.
 **Interview line:** "I designed the collection around how I was going to evaluate, not the other way round."
+
+### D12. Treat session 1 as a pilot and size the rest of the study from it
+**Decision:** Use session 1's shot to shot spread in spin, ball speed and launch to run a power calculation before fixing shots per model for the week.
+**Why:** No prior estimate of my own 7 iron variability exists. Without it, "100 shots per model" is a guess.
+**Interview line:** "I ran a pilot to estimate variance, then sized the experiment from it."
+
+## Design of experiments assessment
+The design is a **randomised complete block design**: each block of shots contains every ball model once in random order, and sessions are a second, larger blocking factor. Strike zone, temperature and ball wear are recorded as covariates.
+
+**L9. Not blinded.** I know which ball I'm hitting, so I could swing differently without meaning to. Blinding is impractical solo; mitigated with an identical pre shot routine. A helper teeing up balls would fix it.
+**L10. Pseudo replication.** Shots are subsamples, not independent replicates. The true replicates of "ball model" are the physical balls (3 per model) and the sessions. Results generalise to *these* balls in *these* sessions; leave one ball out and leave one session out evaluation tests how far beyond that they go.
+**L11. Systematic ball rotation.** Ball units rotate by block number rather than at random, so unit and block position are linked. Minor, but a fully random unit assignment would be cleaner.
+**L12. Strike zone is subjective.** It's a hand recorded covariate, so it adds noise and possible bias.
