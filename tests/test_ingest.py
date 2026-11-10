@@ -51,3 +51,14 @@ def test_build_index_writes_parquet_that_reads_back(session_dir, tmp_path):
     out = tmp_path / "processed" / "shots.parquet"
     build_index(session_dir.parent, out)
     assert len(pd.read_parquet(out)) == 4
+
+
+def test_gc3_parser_reads_multiple_club_sections_in_time_order(tmp_path):
+    hdr = ",Date,Time,Carry,Ball Speed,Launch Angle,Launch Direction,Side Spin,Back Spin,Total Spin,Spin Axis Tilt,Club Speed,Smash Factor,Angle of Attack,Club Path,"
+    row = lambda n, t: f"{n},11/10/2026,9:{t} PM Greenwich Mean Time,50.0,60.0,30.0,1.0 R,100 L,8000,8100,1.0 R,60.0,1.0,5.0 DN,2.0 I-O,"
+    text = "\n".join(["Aman Shah,Shot Analysis", "", "7i,", hdr, row(1, "10:30"), row(2, "11:00"), "Average,,,",
+                      "SW,", hdr, row(1, "00:00"), row(2, "00:30"), "Average,,,"])
+    (tmp_path / "gc3.csv").write_text(text)
+    gc3 = load_gc3(tmp_path / "gc3.csv")
+    assert gc3.club_gc3.tolist() == ["SW", "SW", "7i", "7i"]  # sorted by time, not file order
+    assert gc3.shot_time_s.tolist() == [0, 30, 630, 660]

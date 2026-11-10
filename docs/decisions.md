@@ -115,3 +115,10 @@ The design is a **randomised complete block design**: each block of shots contai
 
 **L13. Phone limiter.** Every impact peaked at 0.89 to 0.92 of full scale, which points to automatic limiting in the phone. Peak loudness can't be used as a feature, and the attack of the transient may be distorted. Fix: move the mic further away until peaks vary, or use an external mic.
 **L14. GC3 spin misreads.** Shot 23 repeated shot 22's spin numbers exactly. Added as a data quality check to watch for.
+
+### D17. Split-plot design: clubs in blocks, balls randomised within them (from session 2)
+**Decision:** Each session has a segment per club (16 blocks of 50 yard sand wedges, 8 blocks of full 7 irons, 48 shots). Which club goes first is randomised per session. Inside each segment, balls are randomised in permuted blocks, and physical ball units are shuffled with balanced counts (fixes L11).
+**Why:** Randomising club every shot would mean changing club in the GC3 app 48 times, an easy way to mislabel data, and would hurt swing consistency. Club is the hard to change factor, so it becomes the whole plot. Ball is the factor of interest, so it is fully randomised within each club. The pilot (D16) found no ball difference on 7 irons, so most shots go to wedges, where cover material should matter most, while some 7 irons keep that series going.
+**Trade off:** Club effects are estimated with less precision than ball effects, because there's only one club switch per session. That's fine, since comparing clubs isn't the question.
+**Safeguard:** ingestion checks that the club order in the plan matches the club labels in the GC3 export, shot by shot.
+**Interview line:** "Club was hard to change and ball was the thing I cared about, so I used a split-plot design."

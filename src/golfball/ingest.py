@@ -7,6 +7,7 @@ Expected raw layout (read only, never edited after the session):
         gc3.csv         Foresight export, one row per shot
         plan.csv        shot plan from scripts/make_plan.py, with manual columns filled in
 """
+import io
 from pathlib import Path
 
 import pandas as pd
@@ -29,18 +30,34 @@ def _signed(value) -> float:
 
 
 def load_gc3(path: Path) -> pd.DataFrame:
-    """Read a Foresight session export: skip title rows, drop the Average row and
-    calculated columns (D2), turn direction suffixes into signs, add shot_time_s."""
-    df = pd.read_csv(path, skiprows=config.GC3_HEADER_LINES, dtype=str).rename(columns=str.strip)
-    df = df[pd.to_numeric(df.iloc[:, 0], errors="coerce").notna()]  # shot rows only
+    """Read a Foresight session export, which has one section per club: a club label
+    row, a header row, shot rows, then an Average row. Drops calculated columns (D2),
+    turns direction suffixes into signs, adds club and shot_time_s, sorts by time."""
+    lines = path.read_text().splitlines()
+    starts = [i for i, l in enumerate(lines) if l.startswith(",Date,")]
+    if not starts:
+        raise KeyError(f"{path}: no Foresight header row found")
+    sections = []
+    for i in starts:
+        club = lines[i - 1].split(",")[0].strip()
+        body = [lines[i]]
+        for l in lines[i + 1:]:
+            if not l.split(",")[0].strip().isdigit():
+                break  # Average row, blank line or next club label
+            body.append(l)
+        sec = pd.read_csv(io.StringIO("\n".join(body)), dtype=str).rename(columns=str.strip)
+        sec["club_gc3"] = club
+        sections.append(sec)
+    df = pd.concat(sections, ignore_index=True)
     missing = set(config.GC3_COLUMNS) - set(df.columns)
     if missing:
         raise KeyError(f"{path}: GC3 columns not found {sorted(missing)}; update config.GC3_COLUMNS")
     out = df[list(config.GC3_COLUMNS)].map(_signed).rename(columns=config.GC3_COLUMNS)
     clock = pd.to_datetime(df["Date"] + " " + df["Time"].str.extract(r"(\d+:\d+:\d+ [AP]M)")[0],
                            format="%m/%d/%Y %I:%M:%S %p")
-    out["shot_time_s"] = (clock - clock.iloc[0]).dt.total_seconds()
-    return out.reset_index(drop=True)
+    out["club_gc3"] = df["club_gc3"]
+    out["shot_time_s"] = (clock - clock.min()).dt.total_seconds()
+    return out.sort_values("shot_time_s", kind="stable").reset_index(drop=True)
 
 
 def ingest_session(session_dir: Path, clips_dir: Path = config.CLIPS_DIR) -> pd.DataFrame:
@@ -52,6 +69,11 @@ def ingest_session(session_dir: Path, clips_dir: Path = config.CLIPS_DIR) -> pd.
     rec, sr = audio.load_mono(session_dir / "recording.wav")
     if len(plan) != len(gc3):
         raise AlignmentError(f"{session_id}: shot counts differ plan={len(plan)} gc3={len(gc3)}")
+    plan_clubs, gc3_clubs = plan.club.str.lower().tolist(), gc3.club_gc3.str.lower().tolist()
+    if plan_clubs != gc3_clubs:
+        bad = next(i for i, (p, g) in enumerate(zip(plan_clubs, gc3_clubs)) if p != g)
+        raise AlignmentError(f"{session_id}: club order differs from shot {bad + 1} "
+                             f"(plan {plan_clubs[bad]}, GC3 {gc3_clubs[bad]})")
     onsets = audio.align_to_shots(rec, sr, audio.detect_onsets(rec, sr), gc3.shot_time_s.to_numpy())
 
     rows = []

@@ -38,7 +38,6 @@ GC3_COLUMNS = {
 # Foresight writes directions as text suffixes ("6.3 R", "4.5 DN", "4.6 I-O").
 # Right, up and in-to-out are positive.
 GC3_SIGN = {"R": 1, "L": -1, "UP": 1, "DN": -1, "I-O": 1, "O-I": -1}
-GC3_HEADER_LINES = 3  # name/title, blank, club label rows before the column header
 
 # Calculated by GC3 software from launch data, identical physics for every ball,
 # so they carry no ball-specific signal and are excluded from features (D2).
